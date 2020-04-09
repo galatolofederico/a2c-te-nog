@@ -1,0 +1,10 @@
+/env
+__pycache__/
+
+
+runs/
+tb_logs/
+checkpoints/*
+!checkpoints/.gitkeep
+
+wandb/
