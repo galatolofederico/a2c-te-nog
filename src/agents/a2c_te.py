@@ -4,15 +4,37 @@ from src.agents.a2c import A2C
 from src.utils import discount
 from src.modules.distributionwrapper import DistributionWrapper
 
-from src.agents.a2c_me import atleast_entropy
+def scale_probs(p, e):
+    ret = torch.zeros_like(p)
+    max_ind = p.max(-1).indices
+    ret = p + e.unsqueeze(1)/(p.shape[-1]-1)
+    ret[torch.arange(0, p.shape[0]), max_ind] = p[torch.arange(0, p.shape[0]), max_ind] - e
+    return ret
 
-class A2CMENOG(A2C):
+def atleast_entropy(probs, target_entropy):
+    entropy = -(torch.log(probs)*probs).sum(dim=1)
+    delta_entropy = entropy - target_entropy
+    max_ind = probs.max(dim=-1).indices
+    mask = torch.zeros_like(probs)
+    mask[torch.arange(0, probs.shape[0]), max_ind] = 1
+
+    coef = torch.log(probs[mask == 0]).mean(dim=-1) \
+            - torch.log(probs[mask == 1])
+    eps = delta_entropy/coef
+    eps[entropy > target_entropy] = 0
+    num_eps = torch.finfo(probs.dtype).eps
+
+    probs = torch.clamp(scale_probs(probs, eps), min=num_eps, max=1-num_eps)
+    
+    return probs
+
+class A2CTE(A2C):
     def __init__(self, *args, target_entropy=0.4, **kwargs):
-        super(A2CMENOG, self).__init__(*args, **kwargs)
+        super(A2CTE, self).__init__(*args, **kwargs)
         self.target_entropy = target_entropy
 
     def select_action(self, state):
-        policy = self.policy(state, variant="nog")
+        policy = self.policy(state)
 
         probs = policy["probs"].detach()
         entropy = -(torch.log(probs)*probs).sum(dim=1)
@@ -30,7 +52,7 @@ class A2CMENOG(A2C):
         return action, \
             dict(
                 log_probs=mass.log_prob(action, policy["probs"]),
-                values=policy["value_d"],
+                values=policy["value"],
                 entropy=entropy,
                 entropy_s=entropy_s,
             )
@@ -47,9 +69,10 @@ class A2CMENOG(A2C):
         policy_loss = -(replay["log_probs"]*(advantages.detach())).mean()
         value_loss = (advantages).pow(2).mean()
 
+        loss = policy_loss + self.vf_coef*value_loss
+
         self.optimizer.zero_grad()
-        policy_loss.backward()
-        value_loss.backward()
+        loss.backward()
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_clip_norm)
         self.optimizer.step()
         
@@ -57,6 +80,7 @@ class A2CMENOG(A2C):
 
         return {
             "scalars": {            
+                "loss/loss": loss.item(),
                 "loss/policy": policy_loss.item(),
                 "loss/value": value_loss.item(),
                 "env/advantage": advantages.mean().item(),

@@ -80,7 +80,7 @@ def infer_args(args):
     if args.agent_name == "A2CSV" or args.agent_name == "A2CNOGSV":
         args.sv = True
     
-    #if args.agent_name == "A2CME" or args.agent_name == "A2CNOGME":
+    #if args.agent_name == "A2CTE" or args.agent_name == "A2CNOGME":
     #    args.me = True
     
 

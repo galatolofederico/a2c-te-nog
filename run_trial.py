@@ -45,7 +45,7 @@ def sample_params(trial):
             "ent_coef": ent_coef,
         })
 
-    if args.agent_name == "A2CME":
+    if args.agent_name == "A2CTE":
         vf_coef = trial.suggest_uniform("vf_coef", 0, 1)
         target_entropy = trial.suggest_uniform("target_entropy", 0, 0.2)
         
@@ -54,7 +54,7 @@ def sample_params(trial):
             "target_entropy": target_entropy
         })
 
-    if args.agent_name == "A2CMENOG":
+    if args.agent_name == "A2CTENOG":
         target_entropy = trial.suggest_uniform("target_entropy", 0, 0.2)
         
         hp.update({

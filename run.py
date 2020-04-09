@@ -16,8 +16,8 @@ from src.agents.a2c import A2C
 from src.agents.a2c_nog import A2CNOG
 from src.agents.a2c_sv import A2CSV
 from src.agents.a2c_nog_sv import A2CNOGSV
-from src.agents.a2c_me import A2CME
-from src.agents.a2c_me_nog import A2CMENOG
+from src.agents.a2c_te import A2CTE
+from src.agents.a2c_te_nog import A2CTENOG
 
 
 from src.logger import Logger
