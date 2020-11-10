@@ -12,7 +12,6 @@ from gym.wrappers import FrameStack
 from gym.wrappers import AtariPreprocessing
 
 from src.polices.actorcritic import SharedActorCritic
-from src.polices.actorcritic import SharedAtariActorCritic
 
 
 from src.agents.a2c import A2C
@@ -41,8 +40,9 @@ if __name__ == "__main__":
     env = VectorWrapper(env)
     env = TorchWrapper(env)
     
-    policy = getattr(sys.modules[__name__], params["policy_name"])(params["framestack"] if params["atari"] else env.state_size, env.action_size)
-    agent = getattr(sys.modules[__name__], params["agent_name"])(env, policy, **vars(args))
+    policy = getattr(sys.modules[__name__], params["policy_name"])(params["framestack"] if params["atari"] else env.state_size, env.action_size, continuous=params["continuous"], stochastic_value=params["sv"], feature_extraction=params["feature_extraction"])
+
+    agent = getattr(sys.modules[__name__], params["agent_name"])(env, policy, **params)
 
     policy.load_state_dict(torch.load(args.checkpoint+"/model.pth"))
 
