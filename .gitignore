@@ -8,3 +8,4 @@ checkpoints/*
 !checkpoints/.gitkeep
 
 wandb/
+env.sh
