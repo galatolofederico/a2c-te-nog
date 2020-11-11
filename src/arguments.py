@@ -33,7 +33,7 @@ def get_parser():
 
     parser.add_argument('--log', type=str, default="stdout")
     parser.add_argument('--name', type=str, default="")
-    parser.add_argument('--wandb-name', type=str, default="better-a2c")
+    parser.add_argument('--wandb-name', type=str, default="a2c-te-nog")
 
 
     parser.add_argument('--render', action="store_true")
