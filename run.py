@@ -19,6 +19,8 @@ from src.agents.a2c_nog_sv import A2CNOGSV
 from src.agents.a2c_te import A2CTE
 from src.agents.a2c_te_nog import A2CTENOG
 
+import src.environments
+
 
 from src.logger import Logger
 
