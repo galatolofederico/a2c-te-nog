@@ -9,3 +9,6 @@ checkpoints/*
 
 wandb/
 env.sh
+
+plots/
+.plotszoo-wandb-cache/
