@@ -5,6 +5,7 @@ import plotszoo
 
 def plot_optim(args, type):
     tag = "%s-%s" % (type, args.tag)
+
     query = {"config.tag": {"$eq": tag}}
     data = plotszoo.data.WandbData(args.username, args.project, query, force_update=args.update, verbose=False)
 
@@ -33,7 +34,7 @@ def plot_optim(args, type):
     parallel_plot.plot(axes)
 
     fig.set_size_inches(20, 10)
-    plt.savefig(os.path.join(args.output_directory, "%s_optim_parallel.png" % (type, )))
+    plotszoo.utils.savefig(fig, os.path.join(args.output_directory, args.tag, type, "optim_parallel.png"))
 
 
     fig, ax = plt.subplots()
@@ -43,7 +44,7 @@ def plot_optim(args, type):
     scatter_cumulative.plot(ax, sort=True)
 
     fig.set_size_inches(20, 10)
-    plt.savefig(os.path.join(args.output_directory, "%s_optim_history.png" % (type, )))
+    plotszoo.utils.savefig(fig, os.path.join(args.output_directory, args.tag, type, "optim_history.png"))
 
     parameters.extend(["config/total_steps", "config/num_envs"])
     args_names = [p.split("/")[1].replace("_","-") for p in parameters]
@@ -51,6 +52,39 @@ def plot_optim(args, type):
     best_args = "".join(["--%s %s " % (n, data.scalars[k][best_run]) for n,k in zip(args_names, parameters)])
     best_args += "--agent %s --env %s" % (type, data.scalars["config/env_name"][best_run])
     print("#%s\n%s" % (type, best_args))
+
+def plot_results(args):
+    tag = "best-%s" % (args.tag, )
+    
+    query = {"config.tag": {"$eq": tag}}
+    data = plotszoo.data.WandbData(args.username, args.project, query, force_update=args.update, verbose=False)
+
+    data.pull_scalars()
+    assert len(data.scalars) > 0, "No data, check the tag name"
+    data.pull_series()
+
+    env_name = data.scalars["config/env_name"][0]
+    goal = None
+    if env_name == "CartPole-v0":
+        goal = 199
+    if env_name == "LunarLander-v2":
+        goal = 200
+    
+    assert goal is not None
+
+    data.rolling_series("episode/reward", "mean_reward", window=10, fn="mean")
+    data.dropna_series(["mean_reward"])
+    data.align_series(to="longest", method="nearest")
+    
+    fig, ax = plt.subplots()
+
+    series_parade = plotszoo.series.grouped.GroupedSeriesParade(data, ["config/agent_name"], "mean_reward")
+
+    series_parade.plot(ax, goal=goal, goal_type="max")
+    ax.legend(loc="lower right")
+
+    plotszoo.utils.savefig(fig, os.path.join(args.output_directory, args.tag, "best_history.png"))
+    
 
 parser = argparse.ArgumentParser()
 
@@ -69,3 +103,4 @@ plot_optim(args, "A2CTE")
 plot_optim(args, "A2CNOG")
 plot_optim(args, "A2CTENOG")
 
+plot_results(args)
