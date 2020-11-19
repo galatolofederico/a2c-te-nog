@@ -24,7 +24,7 @@ def plot_optim(args, type):
     data.pull_scalars()
     assert len(data.scalars) > 0, "No data, check the tag name"
     data.dropna(parameters+["summary/reward"])
-    data.pull_series()
+    data.pull_series(scan_history=False)
     data.create_scalar_from_series("start_time", lambda s: s["_timestamp"].min())
     
     fig, axes = plt.subplots(1, len(parameters), sharey=False)
@@ -72,9 +72,8 @@ def plot_results(args):
     
     assert goal is not None
 
-    data.rolling_series("episode/reward", "mean_reward", window=10, fn="mean")
+    data.rolling_series("episode/reward", "mean_reward", window=500, fn="mean")
     data.dropna_series(["mean_reward"])
-    data.align_series(to="longest", method="nearest")
     
     fig, ax = plt.subplots()
 
@@ -84,6 +83,21 @@ def plot_results(args):
     ax.legend(loc="lower right")
 
     plotszoo.utils.savefig(fig, os.path.join(args.output_directory, args.tag, "best_history.png"))
+
+
+    data.create_scalar_from_series("steps_to_solve", lambda s: (s["mean_reward"] >= goal).idxmax())
+
+    fig, ax = plt.subplots()
+
+    steps_to_solve = plotszoo.scalars.grouped.GroupedScalarsBarchart(data, ["config/agent_name"], "steps_to_solve")
+    sts_data = steps_to_solve.plot(ax)
+
+    plotszoo.utils.savefig(fig, os.path.join(args.output_directory, args.tag, "steps_to_solve.png"))
+    
+    sts_data.to_csv(os.path.join(args.output_directory, args.tag, "steps_to_solve.csv"))
+    print(sts_data)
+    
+
     
 
 parser = argparse.ArgumentParser()
