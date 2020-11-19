@@ -2,6 +2,11 @@ import numpy as np
 from gym.envs.classic_control import MountainCarEnv
 
 class EnergyMountainCarEnv(MountainCarEnv):
+    def __init__(self, *args, **kwargs):
+        super(EnergyMountainCarEnv, self).__init__(*args, **kwargs)
+        self.solve_prize = 0.25
+        self.total_steps = 1e3
+
     def energy(self, state):
         position, velocity = state
         height = self._height(position)
@@ -15,15 +20,19 @@ class EnergyMountainCarEnv(MountainCarEnv):
     def reset(self):
         state = super(EnergyMountainCarEnv, self).reset()
         self.current_energy = self.energy(state)
+        self.steps = 0
         return state
 
     def step(self, action):
-        state, reward, done, info = super(EnergyMountainCarEnv, self).step(action)
+        state, _, solved, info = super(EnergyMountainCarEnv, self).step(action)
         new_energy = self.energy(state)
-        
+        self.steps += 1
+
         reward = new_energy - self.current_energy
+        reward += self.solve_prize if solved else 0
+
         self.current_energy = new_energy
-        return state, reward, done, info
+        return state, reward, self.steps >= self.total_steps, info
 
 
 if __name__ == "__main__":
