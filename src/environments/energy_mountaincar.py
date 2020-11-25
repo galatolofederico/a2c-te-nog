@@ -5,7 +5,7 @@ class EnergyMountainCarEnv(MountainCarEnv):
     def __init__(self, *args, **kwargs):
         super(EnergyMountainCarEnv, self).__init__(*args, **kwargs)
         self.solve_prize = 0.25
-        self.total_steps = 1e3
+        self.max_steps = 1e3
 
     def energy(self, state):
         position, velocity = state
@@ -32,7 +32,7 @@ class EnergyMountainCarEnv(MountainCarEnv):
         reward += self.solve_prize if solved else 0
 
         self.current_energy = new_energy
-        return state, reward, self.steps >= self.total_steps, info
+        return state, reward, solved or self.steps >= self.max_steps, info
 
 
 if __name__ == "__main__":
